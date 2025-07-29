@@ -781,19 +781,75 @@ class CyberGuardGame {
     
     getSecurityTip(type) {
         const tips = {
-            firewall: "TIP: A firewall acts as a barrier, preventing unauthorized access to your network.",
-            antivirus: "TIP: Keep your antivirus software updated to protect against the latest threats.",
-            encryption: "TIP: Encryption scrambles your data, making it unreadable to unauthorized users.",
-            password: "TIP: Use strong, unique passwords for each account. A password manager can help!",
-            vpn: "TIP: A VPN encrypts your internet traffic, keeping you safe on public Wi-Fi.",
-            backup: "TIP: Regularly back up important files to prevent data loss from ransomware or hardware failure.",
-            masterkey: "TIP: A master key is powerful! Protect your most critical credentials with extra care.",
-            quantumencryption: "TIP: Quantum encryption offers next-level security, resistant to even quantum computers.",
-            neuralantivirus: "TIP: AI-powered antivirus can predict and stop new, unknown threats.",
-            blockchainvpn: "TIP: A decentralized VPN adds another layer of anonymity and security.",
-            aibackup: "TIP: Smart backups can prioritize critical files and ensure data integrity."
+            firewall: [
+                "TIP: A firewall is your network's first line of defense, monitoring all traffic.",
+                "TIP: Using both hardware and software firewalls provides robust, layered security.",
+                "TIP: Regularly review your firewall rules to remove outdated or unnecessary permissions.",
+                "TIP: A personal firewall protects your device even when connected to untrusted public networks.",
+            ],
+            antivirus: [
+                "TIP: Keep your antivirus software updated to defend against the very latest malware threats.",
+                "TIP: Schedule regular full system scans with your antivirus, ideally once a week.",
+                "TIP: Never disable your antivirus protection, even temporarily. An attack takes only seconds.",
+                "TIP: Enable real-time protection in your antivirus settings for continuous security monitoring.",
+            ],
+            encryption: [
+                "TIP: Encryption scrambles data, making it unreadable to anyone without the correct key.",
+                "TIP: Look for 'HTTPS' in your browser's address bar to ensure your connection is encrypted.",
+                "TIP: Use full-disk encryption (like BitLocker or FileVault) to protect data if your device is stolen.",
+                "TIP: End-to-end encryption in messaging apps means only you and the recipient can read the messages.",
+            ],
+            password: [
+                "TIP: Enable Two-Factor Authentication (2FA) on all important accounts for a major security boost.",
+                "TIP: Use a unique, complex password for every single account. Never reuse passwords!",
+                "TIP: A strong password is long (12+ characters) and mixes cases, numbers, and symbols.",
+                "TIP: Use a reputable password manager to securely store and generate strong, unique passwords.",
+            ],
+            vpn: [
+                "TIP: A VPN encrypts your internet connection, protecting your data on public Wi-Fi.",
+                "TIP: A 'no-logs' VPN provider doesn't store records of your online activity, enhancing privacy.",
+                "TIP: A VPN's 'kill switch' feature blocks internet access if the VPN disconnects, preventing data leaks.",
+                "TIP: A VPN hides your IP address, making it harder for websites and services to track you online.",
+            ],
+            backup: [
+                "TIP: Follow the 3-2-1 rule: 3 data copies, on 2 different media types, with 1 copy off-site.",
+                "TIP: Regular backups are your best defense against data loss from ransomware or hardware failure.",
+                "TIP: Test your backups periodically to ensure you can actually restore your files when needed.",
+                "TIP: Encrypting your backups is as important as encrypting the original data.",
+            ],
+            masterkey: [
+                "TIP: Your password manager's master password is the key to your digital life. Make it strong and memorable.",
+                "TIP: Store your 2FA recovery codes in a safe, offline location, like a safe or a secure note.",
+                "TIP: A physical security key (like a YubiKey) provides one of the strongest forms of account protection.",
+                "TIP: Your primary email account is often a master key to other accounts. Secure it with 2FA!",
+            ],
+            quantumencryption: [
+                "TIP: Quantum Key Distribution (QKD) uses quantum physics to create theoretically unhackable keys.",
+                "TIP: Any attempt to intercept a quantum key exchange alters it, immediately alerting the users.",
+                "TIP: Quantum-resistant algorithms are being developed to secure today's data from future quantum computers.",
+                "TIP: This next-gen encryption will be vital for protecting highly sensitive, long-term data.",
+            ],
+            neuralantivirus: [
+                "TIP: AI-powered antivirus detects new threats by analyzing suspicious behavior, not just known code.",
+                "TIP: By learning what's 'normal' for your system, a neural antivirus can spot anomalies that signal an attack.",
+                "TIP: This adaptive defense gets smarter over time as it analyzes more data and threats.",
+                "TIP: Neural networks can identify and block zero-day attacks that traditional antivirus might miss.",
+            ],
+            blockchainvpn: [
+                "TIP: A decentralized VPN (dVPN) has no central point of failure or control, increasing censorship resistance.",
+                "TIP: By routing traffic through a distributed network of nodes, a dVPN enhances user anonymity.",
+                "TIP: With no central server, there is no single entity that can be forced to log user data.",
+                "TIP: This technology represents a shift towards user-controlled, privacy-focused internet tools.",
+            ],
+            aibackup: [
+                "TIP: AI-driven backups can intelligently prioritize critical files and optimize schedules.",
+                "TIP: Smart backup systems can scan files for malware infection *before* they are backed up.",
+                "TIP: AI can predict potential drive failures, prompting you to back up data before it's lost.",
+                "TIP: By analyzing file versions, AI can help identify the exact point a ransomware attack occurred.",
+            ]
         };
-        return tips[type] || "Security Token Collected! Stay vigilant online.";
+        const tipSelection = tips[type] || ["TIP: Every security measure you take makes you a harder target for cyber threats!"];
+        return tipSelection[Math.floor(Math.random() * tipSelection.length)];
     }
 
     render() {
