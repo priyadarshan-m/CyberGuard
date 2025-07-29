@@ -138,6 +138,17 @@ class AssetGenerator {
         ctx.fill();
         return canvas;
     }
+
+    createTeleporter() {
+        const { canvas, ctx } = this.createCanvas(20, 30);
+        ctx.fillStyle = '#ff00ff';
+        ctx.fillRect(2, 0, 16, 30);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(4, 2, 12, 26);
+        ctx.fillStyle = '#ff00ff';
+        ctx.fillRect(6, 4, 8, 22);
+        return canvas;
+    }
 }
 
 
@@ -169,7 +180,7 @@ class CyberGuardGame {
         // Player properties
         this.player = {
             x: 50, y: 400, width: 24, height: 32,
-            velX: 0, velY: 0, speed: 5, jumpPower: 14,
+            velX: 0, velY: 0, speed: 6, jumpPower: 15,
             onGround: false, facing: 1, invulnerable: 0,
         };
 
@@ -195,6 +206,9 @@ class CyberGuardGame {
 
         // Camera
         this.camera = { x: 0, y: 0, shakeX: 0, shakeY: 0, shake: 0 };
+
+        // Performance optimization
+        this.visibleBounds = { left: 0, right: 0, top: 0, bottom: 0 };
 
         this.init();
     }
@@ -223,6 +237,7 @@ class CyberGuardGame {
         
         this.assets.goal = generator.createGoal();
         this.assets.spikes = generator.createSpikes();
+        this.assets.teleporter = generator.createTeleporter();
     }
 
     setupEventListeners() {
@@ -260,102 +275,191 @@ class CyberGuardGame {
     
     getLevelData(levelNum) {
         const levels = {
-            1: { platforms: [{x:0,y:550,width:200,height:50},{x:300,y:450,width:100,height:20},{x:500,y:350,width:100,height:20},{x:700,y:250,width:100,height:20},{x:900,y:450,width:200,height:50}], movingPlatforms: [{x:250,y:400,width:80,height:20,moveX:100,speed:1}], fallingPlatforms: [{x:600,y:300,width:80,height:20,fallDelay:180}], enemies: [{x:350,y:430,type:'virus',speed:1,patrol:40}], spikes: [{x:450,y:530,width:100}], collectibles: [{x:330,y:420,type:'firewall'},{x:630,y:270,type:'encryption'},{x:730,y:220,type:'antivirus'}] , goal:{x:950,y:400,width:40,height:50}},
-            2: { platforms: [{x:0,y:550,width:150,height:50},{x:200,y:450,width:80,height:20},{x:400,y:350,width:80,height:20},{x:600,y:250,width:80,height:20},{x:800,y:350,width:80,height:20},{x:1000,y:450,width:150,height:50}], disappearingPlatforms: [{x:300,y:400,width:80,height:20,timer:120,maxTimer:120}], chasers: [{x:-100,y:570,width:1200,height:30,speed:0.5,type:'lava'}], enemies: [{x:220,y:430,type:'malware',speed:1,patrol:30},{x:620,y:230,type:'spyware',speed:1,patrol:30}], collectibles: [{x:230,y:420,type:'password'},{x:530,y:270,type:'vpn'},{x:830,y:320,type:'backup'}], goal:{x:1050,y:400,width:40,height:50}},
-            3: { platforms: [{x:0,y:550,width:120,height:50},{x:200,y:450,width:80,height:20},{x:1000,y:250,width:80,height:20},{x:1400,y:450,width:120,height:50}], teleporters: [{x:240,y:420,width:20,height:30,target:{x:1040,y:220},color:'#ff00ff'}], enemies: [{x:210,y:430,type:'worm',speed:1,patrol:30}], collectibles: [{x:430,y:320,type:'encryption'},{x:830,y:120,type:'antivirus'},{x:1230,y:320,type:'firewall'}], goal:{x:1450,y:400,width:40,height:50}},
-            4: { platforms: [{x:0,y:550,width:150,height:50},{x:200,y:400,width:100,height:20},{x:350,y:300,width:100,height:20},{x:500,y:200,width:100,height:20},{x:1100,y:400,width:150,height:50}], movingPlatforms: [{x:750,y:150,width:80,height:20,moveY:150,speed:2}], enemies: [{x:210,y:380,type:'keylogger',speed:1,patrol:40},{x:510,y:180,type:'ransomware',speed:1,patrol:40}], spikes: [{x:150,y:530,width:50}], collectibles: [{x:230,y:370,type:'vpn'},{x:580,y:170,type:'backup'},{x:980,y:270,type:'password'}], goal:{x:1150,y:350,width:40,height:50}},
-            5: { platforms: [{x:0,y:550,width:200,height:50},{x:300,y:450,width:100,height:20},{x:1500,y:450,width:200,height:50}], fallingPlatforms: [{x:700,y:250,width:100,height:20,fallDelay:120}], chasers: [{x:1800,y:0,width:50,height:600,speed:1.2,type:'wall'}], enemies: [{x:310,y:430,type:'supervirus',speed:2,patrol:40}], spikes: [{x:200,y:530,width:100}], teleporters: [{x:550,y:320,width:20,height:30,target:{x:50,y:500},color:'#ff00ff'}], collectibles: [{x:330,y:420,type:'masterkey'}], goal:{x:1550,y:400,width:40,height:50}},
+            1: { 
+                platforms: [
+                    {x:0,y:550,width:200,height:50},
+                    {x:300,y:450,width:100,height:20},
+                    {x:500,y:350,width:100,height:20},
+                    {x:700,y:250,width:100,height:20},
+                    {x:900,y:450,width:200,height:50}
+                ], 
+                movingPlatforms: [{x:250,y:400,width:80,height:20,moveX:100,speed:1}], 
+                fallingPlatforms: [{x:600,y:300,width:80,height:20,fallDelay:180}], 
+                enemies: [{x:350,y:430,type:'virus',speed:1,patrol:40}], 
+                spikes: [{x:450,y:530,width:100}], 
+                collectibles: [
+                    {x:330,y:420,type:'firewall'},
+                    {x:630,y:270,type:'encryption'},
+                    {x:730,y:220,type:'antivirus'}
+                ], 
+                goal:{x:950,y:400,width:40,height:50}
+            },
+            2: { 
+                platforms: [
+                    {x:0,y:550,width:150,height:50},
+                    {x:200,y:450,width:80,height:20},
+                    {x:400,y:350,width:80,height:20},
+                    {x:600,y:250,width:80,height:20},
+                    {x:800,y:350,width:80,height:20},
+                    {x:1000,y:450,width:150,height:50}
+                ], 
+                disappearingPlatforms: [{x:300,y:400,width:80,height:20,timer:120,maxTimer:120}], 
+                chasers: [{x:-100,y:570,width:1200,height:30,speed:0.5,type:'lava'}], 
+                enemies: [
+                    {x:220,y:430,type:'malware',speed:1,patrol:30},
+                    {x:620,y:230,type:'spyware',speed:1,patrol:30}
+                ], 
+                collectibles: [
+                    {x:230,y:420,type:'password'},
+                    {x:530,y:270,type:'vpn'},
+                    {x:830,y:320,type:'backup'}
+                ], 
+                goal:{x:1050,y:400,width:40,height:50}
+            },
+            3: { 
+                platforms: [
+                    {x:0,y:550,width:120,height:50},
+                    {x:200,y:450,width:80,height:20},
+                    {x:400,y:350,width:80,height:20},
+                    {x:600,y:250,width:80,height:20},
+                    {x:800,y:350,width:80,height:20},
+                    {x:1000,y:250,width:80,height:20},
+                    {x:1200,y:450,width:120,height:50}
+                ], 
+                teleporters: [
+                    {x:320,y:320,width:20,height:30,target:{x:640,y:220},color:'#ff00ff'},
+                    {x:1040,y:220,width:20,height:30,target:{x:240,y:420},color:'#00ffff'}
+                ], 
+                enemies: [{x:210,y:430,type:'worm',speed:1,patrol:30}], 
+                collectibles: [
+                    {x:230,y:420,type:'encryption'},
+                    {x:630,y:220,type:'antivirus'},
+                    {x:1030,y:220,type:'firewall'}
+                ], 
+                goal:{x:1250,y:400,width:40,height:50}
+            },
+            4: { 
+                platforms: [
+                    {x:0,y:550,width:150,height:50},
+                    {x:200,y:400,width:100,height:20},
+                    {x:350,y:300,width:100,height:20},
+                    {x:500,y:200,width:100,height:20},
+                    {x:900,y:300,width:100,height:20},
+                    {x:1100,y:400,width:150,height:50}
+                ], 
+                movingPlatforms: [{x:700,y:250,width:80,height:20,moveY:100,speed:1.5}], 
+                enemies: [
+                    {x:210,y:380,type:'keylogger',speed:1,patrol:40},
+                    {x:510,y:180,type:'ransomware',speed:1,patrol:40}
+                ], 
+                spikes: [{x:150,y:530,width:50}], 
+                collectibles: [
+                    {x:230,y:370,type:'vpn'},
+                    {x:530,y:170,type:'backup'},
+                    {x:930,y:270,type:'password'}
+                ], 
+                goal:{x:1150,y:350,width:40,height:50}
+            },
+            5: { 
+                platforms: [
+                    {x:0,y:550,width:200,height:50},
+                    {x:300,y:450,width:100,height:20},
+                    {x:1500,y:450,width:200,height:50}
+                ], 
+                fallingPlatforms: [{x:700,y:250,width:100,height:20,fallDelay:120}], 
+                chasers: [{x:1800,y:0,width:50,height:600,speed:1.2,type:'wall'}], 
+                enemies: [{x:310,y:430,type:'supervirus',speed:2,patrol:40}], 
+                spikes: [{x:200,y:530,width:100}], 
+                teleporters: [{x:550,y:320,width:20,height:30,target:{x:50,y:500},color:'#ff00ff'}], 
+                collectibles: [{x:330,y:420,type:'masterkey'}], 
+                goal:{x:1550,y:400,width:40,height:50}
+            },
         };
         return levels[levelNum] || levels[1];
     }
     
     generateLevel(levelNum) {
-    const levelData = this.getLevelData(levelNum);
+        const levelData = this.getLevelData(levelNum);
 
-    // Reset all entity arrays
-    const arraysToReset = ['platforms', 'enemies', 'collectibles', 'movingPlatforms', 'spikes', 'disappearingPlatforms', 'fakeGoals', 'teleporters', 'switches', 'doors', 'fallingPlatforms', 'chasers', 'surpriseElements', 'particles'];
-    arraysToReset.forEach(arr => this[arr] = []);
+        // Reset all entity arrays
+        const arraysToReset = ['platforms', 'enemies', 'collectibles', 'movingPlatforms', 'spikes', 'disappearingPlatforms', 'fakeGoals', 'teleporters', 'switches', 'doors', 'fallingPlatforms', 'chasers', 'surpriseElements', 'particles'];
+        arraysToReset.forEach(arr => this[arr] = []);
 
-    // Create platforms first
-    levelData.platforms?.forEach(p => this.platforms.push({ ...p }));
-    levelData.movingPlatforms?.forEach(p => this.movingPlatforms.push({ ...p, startX: p.x, startY: p.y, offset: 0, direction: 1 }));
-    levelData.fallingPlatforms?.forEach(p => this.fallingPlatforms.push({ ...p, originalY: p.y, falling: false, fallSpeed: 0, triggered: false }));
-    levelData.disappearingPlatforms?.forEach(p => this.disappearingPlatforms.push({ ...p, visible: true, alpha: 1, timer: p.maxTimer }));
+        // Create platforms first
+        levelData.platforms?.forEach(p => this.platforms.push({ ...p }));
+        levelData.movingPlatforms?.forEach(p => this.movingPlatforms.push({ ...p, startX: p.x, startY: p.y, offset: 0, direction: 1 }));
+        levelData.fallingPlatforms?.forEach(p => this.fallingPlatforms.push({ ...p, originalY: p.y, falling: false, fallSpeed: 0, triggered: false }));
+        levelData.disappearingPlatforms?.forEach(p => this.disappearingPlatforms.push({ ...p, visible: true, alpha: 1, timer: p.maxTimer }));
 
-    // Create enemies and properly position them on platforms
-    levelData.enemies?.forEach(e => {
-        const enemy = {
-            ...e,
-            width: 24,
-            height: 24,
-            direction: 1,
-            velY: 0,
-            onGround: true, // Start on ground
-            patrolStart: e.x - (e.patrol || 50),
-            patrolEnd: e.x + (e.patrol || 50)
-        };
+        // Create enemies and properly position them on platforms
+        levelData.enemies?.forEach(e => {
+            const enemy = {
+                ...e,
+                width: 24,
+                height: 24,
+                direction: 1,
+                velY: 0,
+                onGround: true,
+                patrolStart: e.x - (e.patrol || 50),
+                patrolEnd: e.x + (e.patrol || 50)
+            };
 
-        // Find the platform this enemy should be standing on
-        const allPlatforms = [...this.platforms, ...this.movingPlatforms, ...this.fallingPlatforms];
-        let foundPlatform = false;
-
-        for (const platform of allPlatforms) {
-            // Check if enemy X position is within platform bounds
-            if (enemy.x >= platform.x && enemy.x + enemy.width <= platform.x + platform.width) {
-                // Check if enemy is close to being above this platform
-                if (Math.abs((enemy.y + enemy.height) - platform.y) < 50) {
-                    // Position enemy exactly on top of the platform
-                    enemy.y = platform.y - enemy.height;
-                    enemy.onGround = true;
-                    foundPlatform = true;
-                    break;
-                }
-            }
-        }
-
-        // If no platform found, try to find the closest platform below
-        if (!foundPlatform) {
-            let closestPlatform = null;
-            let closestDistance = Infinity;
+            // Find the platform this enemy should be standing on
+            const allPlatforms = [...this.platforms, ...this.movingPlatforms, ...this.fallingPlatforms];
+            let foundPlatform = false;
 
             for (const platform of allPlatforms) {
-                // Check if enemy X overlaps with platform
-                if (enemy.x + enemy.width > platform.x && enemy.x < platform.x + platform.width) {
-                    const distance = Math.abs(platform.y - (enemy.y + enemy.height));
-                    if (distance < closestDistance && platform.y >= enemy.y) {
-                        closestDistance = distance;
-                        closestPlatform = platform;
+                if (enemy.x >= platform.x && enemy.x + enemy.width <= platform.x + platform.width) {
+                    if (Math.abs((enemy.y + enemy.height) - platform.y) < 50) {
+                        enemy.y = platform.y - enemy.height;
+                        enemy.onGround = true;
+                        foundPlatform = true;
+                        break;
                     }
                 }
             }
 
-            if (closestPlatform) {
-                enemy.y = closestPlatform.y - enemy.height;
-                enemy.onGround = true;
+            if (!foundPlatform) {
+                let closestPlatform = null;
+                let closestDistance = Infinity;
+
+                for (const platform of allPlatforms) {
+                    if (enemy.x + enemy.width > platform.x && enemy.x < platform.x + platform.width) {
+                        const distance = Math.abs(platform.y - (enemy.y + enemy.height));
+                        if (distance < closestDistance && platform.y >= enemy.y) {
+                            closestDistance = distance;
+                            closestPlatform = platform;
+                        }
+                    }
+                }
+
+                if (closestPlatform) {
+                    enemy.y = closestPlatform.y - enemy.height;
+                    enemy.onGround = true;
+                }
             }
+
+            this.enemies.push(enemy);
+        });
+
+        // Create other game objects
+        levelData.spikes?.forEach(s => this.spikes.push({ ...s, height: 20 }));
+        levelData.collectibles?.forEach(c => this.collectibles.push({ ...c, width: 20, height: 20, collected: false, bobOffset: Math.random() * Math.PI * 2 }));
+        levelData.teleporters?.forEach(t => this.teleporters.push({ ...t, cooldown: 0, animOffset: Math.random() * Math.PI * 2 }));
+        levelData.switches?.forEach(s => this.switches.push({ ...s }));
+        levelData.doors?.forEach(d => this.doors.push({ ...d, openHeight: 0 }));
+        levelData.chasers?.forEach(c => this.chasers.push({ ...c }));
+        levelData.surpriseElements?.forEach(e => this.surpriseElements.push({ ...e, activated: false }));
+        levelData.fakeGoals?.forEach(f => this.fakeGoals.push({ ...f, glitch: 0 }));
+
+        this.goal = { ...levelData.goal };
+        if (levelData.trick) {
+            setTimeout(() => this.showMessage(levelData.trick), 1000);
         }
 
-        this.enemies.push(enemy);
-    });
-
-    // Create other game objects
-    levelData.spikes?.forEach(s => this.spikes.push({ ...s, height: 20 }));
-    levelData.collectibles?.forEach(c => this.collectibles.push({ ...c, width: 20, height: 20, collected: false, bobOffset: Math.random() * Math.PI * 2 }));
-    levelData.teleporters?.forEach(t => this.teleporters.push({ ...t, cooldown: 0, animOffset: Math.random() * Math.PI * 2 }));
-    levelData.switches?.forEach(s => this.switches.push({ ...s }));
-    levelData.doors?.forEach(d => this.doors.push({ ...d, openHeight: 0 }));
-    levelData.chasers?.forEach(c => this.chasers.push({ ...c }));
-    levelData.surpriseElements?.forEach(e => this.surpriseElements.push({ ...e, activated: false }));
-    levelData.fakeGoals?.forEach(f => this.fakeGoals.push({ ...f, glitch: 0 }));
-
-    this.goal = { ...levelData.goal };
-    if (levelData.trick) {
-        setTimeout(() => this.showMessage(levelData.trick), 1000);
+        this.totalCollectibles = this.collectibles.length;
+        this.collectedCount = 0;
     }
-
-    this.totalCollectibles = this.collectibles.length;
-    this.collectedCount = 0;
-}
 
     update() {
         if (this.gameState !== 'playing') return;
@@ -363,17 +467,38 @@ class CyberGuardGame {
         this.frame++;
         this.gameTime = (Date.now() - this.startTime) / 1000;
 
+        // Update visible bounds for optimization
+        this.updateVisibleBounds();
+
         this.handleInput();
         this.updatePlayer();
-        this.updateEnemies(); // Enemy physics is now handled here
+        this.updateEnemies();
         this.updateMovingPlatforms();
         this.updateFallingPlatforms();
+        this.updateTeleporters();
 
         this.checkCollisions();
         this.updateCamera();
         this.updateUI();
 
         if (this.player.invulnerable > 0) this.player.invulnerable--;
+    }
+
+    updateVisibleBounds() {
+        const margin = 100;
+        this.visibleBounds = {
+            left: this.camera.x - margin,
+            right: this.camera.x + this.canvas.width + margin,
+            top: this.camera.y - margin,
+            bottom: this.camera.y + this.canvas.height + margin
+        };
+    }
+
+    isVisible(obj) {
+        return obj.x + obj.width > this.visibleBounds.left && 
+               obj.x < this.visibleBounds.right &&
+               obj.y + obj.height > this.visibleBounds.top && 
+               obj.y < this.visibleBounds.bottom;
     }
     
     handleInput() {
@@ -382,7 +507,7 @@ class CyberGuardGame {
         } else if (this.keys['ArrowRight'] || this.keys['KeyD']) {
             this.player.velX = this.player.speed;
         } else {
-            this.player.velX *= 0.8; // Friction
+            this.player.velX *= 0.8;
         }
 
         if ((this.keys['Space'] || this.keys['ArrowUp'] || this.keys['KeyW']) && this.player.onGround) {
@@ -396,26 +521,51 @@ class CyberGuardGame {
         if (this.player.velX < -0.1) this.player.facing = -1;
 
         if (!this.player.onGround) {
-            this.player.velY += 0.6; // Gravity
+            this.player.velY += 0.6;
         }
+        
+        // Store old position for collision resolution
+        const oldX = this.player.x;
+        const oldY = this.player.y;
         
         this.player.x += this.player.velX;
         this.player.y += this.player.velY;
         this.player.onGround = false;
         
         const allPlatforms = [...this.platforms, ...this.movingPlatforms, ...this.fallingPlatforms.filter(p => !p.falling)];
+        
+        // Check collisions with better handling for moving platforms
         for (const platform of allPlatforms) {
             if (this.checkCollision(this.player, platform)) {
-                // Vertical collision (landing on top)
-                if (this.player.velY >= 0 && (this.player.y + this.player.height - this.player.velY) <= platform.y) {
+                // Check if this is a moving platform
+                const isMovingPlatform = this.movingPlatforms.includes(platform);
+                
+                // Landing on top (most important check)
+                if (this.player.velY >= 0 && oldY + this.player.height <= platform.y + 5) {
                     this.player.y = platform.y - this.player.height;
                     this.player.velY = 0;
                     this.player.onGround = true;
+                    
+                    // If on moving platform, move player with it
+                    if (isMovingPlatform && platform.moveY) {
+                        const platformVelY = Math.cos(platform.offset * 0.02) * platform.moveY * platform.speed * 0.02;
+                        this.player.y += platformVelY;
+                    }
                 }
-                 // Horizontal collision
-                else if (this.player.onGround === false){
-                     if (this.player.velX > 0) this.player.x = platform.x - this.player.width;
-                     if (this.player.velX < 0) this.player.x = platform.x + platform.width;
+                // Hitting platform from below
+                else if (this.player.velY < 0 && oldY >= platform.y + platform.height - 5) {
+                    this.player.y = platform.y + platform.height;
+                    this.player.velY = 0;
+                }
+                // Side collisions (only if not landing on top)
+                else if (Math.abs(oldY + this.player.height - platform.y) > 10) {
+                    if (this.player.velX > 0 && oldX + this.player.width <= platform.x + 5) {
+                        this.player.x = platform.x - this.player.width;
+                        this.player.velX = 0;
+                    } else if (this.player.velX < 0 && oldX >= platform.x + platform.width - 5) {
+                        this.player.x = platform.x + platform.width;
+                        this.player.velX = 0;
+                    }
                 }
             }
         }
@@ -425,91 +575,80 @@ class CyberGuardGame {
         }
     }
 
-        updateEnemies() {
-    const allPlatforms = [...this.platforms, ...this.movingPlatforms, ...this.fallingPlatforms.filter(p => !p.falling)];
-    
-    this.enemies.forEach(enemy => {
-        // Apply gravity only if not on ground
-        if (!enemy.onGround) {
-            enemy.velY += 0.6; // Gravity
-        }
+    updateEnemies() {
+        const allPlatforms = [...this.platforms, ...this.movingPlatforms, ...this.fallingPlatforms.filter(p => !p.falling)];
         
-        // Move enemy vertically
-        enemy.y += enemy.velY;
-        enemy.onGround = false;
-        
-        // Check for platform collisions (landing on platforms)
-        for (const platform of allPlatforms) {
-            if (this.checkCollision(enemy, platform)) {
-                // Check if enemy is falling down and hitting the top of the platform
-                if (enemy.velY > 0 && (enemy.y + enemy.height - enemy.velY) <= platform.y) {
-                    enemy.y = platform.y - enemy.height;
-                    enemy.velY = 0;
-                    enemy.onGround = true;
-                    break;
-                }
-                // Handle side collisions
-                else if (enemy.velY <= 0) {
-                    if (enemy.y < platform.y + platform.height) {
-                        enemy.y = platform.y + platform.height;
+        this.enemies.forEach(enemy => {
+            // Skip update if enemy is not visible (optimization)
+            if (!this.isVisible(enemy)) return;
+
+            if (!enemy.onGround) {
+                enemy.velY += 0.6;
+            }
+            
+            enemy.y += enemy.velY;
+            enemy.onGround = false;
+            
+            for (const platform of allPlatforms) {
+                if (this.checkCollision(enemy, platform)) {
+                    if (enemy.velY > 0 && (enemy.y + enemy.height - enemy.velY) <= platform.y) {
+                        enemy.y = platform.y - enemy.height;
                         enemy.velY = 0;
+                        enemy.onGround = true;
+                        break;
+                    } else if (enemy.velY <= 0) {
+                        if (enemy.y < platform.y + platform.height) {
+                            enemy.y = platform.y + platform.height;
+                            enemy.velY = 0;
+                        }
                     }
                 }
             }
-        }
 
-        // If enemy is on ground, do patrol movement
-        if (enemy.onGround) {
-            // Store current position to check for valid movement
-            const oldX = enemy.x;
-            enemy.x += (enemy.speed || 1) * enemy.direction;
-            
-            // Check boundaries - turn around if hit patrol limits
-            if (enemy.x <= enemy.patrolStart || (enemy.x + enemy.width) >= enemy.patrolEnd) {
-                enemy.direction *= -1;
-                enemy.x = oldX; // Reset to valid position
-            }
-            
-            // Check for ground ahead to avoid falling off platforms
-            const lookaheadDistance = 10;
-            const lookaheadX = enemy.direction > 0 ? 
-                enemy.x + enemy.width + lookaheadDistance : 
-                enemy.x - lookaheadDistance;
-            
-            let groundAhead = false;
-            
-            // Check if there's ground ahead
-            for (const platform of allPlatforms) {
-                const testRect = {
-                    x: lookaheadX - 5,
-                    y: enemy.y + enemy.height,
-                    width: 10,
-                    height: 20
-                };
+            if (enemy.onGround) {
+                const oldX = enemy.x;
+                enemy.x += (enemy.speed || 1) * enemy.direction;
                 
-                if (this.checkCollision(testRect, platform)) {
-                    groundAhead = true;
-                    break;
+                if (enemy.x <= enemy.patrolStart || (enemy.x + enemy.width) >= enemy.patrolEnd) {
+                    enemy.direction *= -1;
+                    enemy.x = oldX;
+                }
+                
+                const lookaheadDistance = 10;
+                const lookaheadX = enemy.direction > 0 ? 
+                    enemy.x + enemy.width + lookaheadDistance : 
+                    enemy.x - lookaheadDistance;
+                
+                let groundAhead = false;
+                
+                for (const platform of allPlatforms) {
+                    const testRect = {
+                        x: lookaheadX - 5,
+                        y: enemy.y + enemy.height,
+                        width: 10,
+                        height: 20
+                    };
+                    
+                    if (this.checkCollision(testRect, platform)) {
+                        groundAhead = true;
+                        break;
+                    }
+                }
+                
+                if (!groundAhead) {
+                    enemy.direction *= -1;
+                    enemy.x = oldX;
                 }
             }
             
-            // Turn around if no ground ahead (cliff detection)
-            if (!groundAhead) {
-                enemy.direction *= -1;
-                enemy.x = oldX; // Reset to safe position
+            if (enemy.y > this.canvas.height + 100) {
+                enemy.y = 200;
+                enemy.x = enemy.patrolStart + (enemy.patrolEnd - enemy.patrolStart) / 2;
+                enemy.velY = 0;
+                enemy.onGround = false;
             }
-        }
-        
-        // Remove enemies that fall too far (safety net)
-        if (enemy.y > this.canvas.height + 100) {
-            // Reset enemy to a safe position on their patrol route
-            enemy.y = 200; // Reset to a reasonable height
-            enemy.x = enemy.patrolStart + (enemy.patrolEnd - enemy.patrolStart) / 2;
-            enemy.velY = 0;
-            enemy.onGround = false;
-        }
-    });
-}
+        });
+    }
 
     updateMovingPlatforms() {
         this.movingPlatforms.forEach(p => {
@@ -535,16 +674,41 @@ class CyberGuardGame {
         });
     }
 
+    updateTeleporters() {
+        this.teleporters.forEach(t => {
+            if (t.cooldown > 0) t.cooldown--;
+            t.animOffset += 0.1;
+        });
+    }
+
     checkCollisions() {
         if (this.player.invulnerable === 0) {
-            this.enemies.forEach(e => { if (this.checkCollision(this.player, e)) this.respawnPlayer(); });
-            this.spikes.forEach(s => { if (this.checkCollision(this.player, {x:s.x, y:s.y, width:s.width, height:s.height})) this.respawnPlayer(); });
+            this.enemies.forEach(e => { 
+                if (this.isVisible(e) && this.checkCollision(this.player, e)) this.respawnPlayer(); 
+            });
+            this.spikes.forEach(s => { 
+                if (this.checkCollision(this.player, {x:s.x, y:s.y, width:s.width, height:s.height})) this.respawnPlayer(); 
+            });
         }
 
         this.collectibles.forEach(c => {
             if (!c.collected && this.checkCollision(this.player, c)) {
-                c.collected = true; this.collectedCount++; this.score += 150;
+                c.collected = true; 
+                this.collectedCount++; 
+                this.score += 150;
                 this.showMessage(this.getSecurityTip(c.type));
+            }
+        });
+
+        // Check teleporter collisions
+        this.teleporters.forEach(t => {
+            if (t.cooldown === 0 && this.checkCollision(this.player, t)) {
+                this.player.x = t.target.x;
+                this.player.y = t.target.y;
+                this.player.velX = 0;
+                this.player.velY = 0;
+                t.cooldown = 60; // 1 second cooldown
+                this.showMessage("Teleported!");
             }
         });
 
@@ -591,7 +755,6 @@ class CyberGuardGame {
     }
 
     gameOver() {
-        // This function is now only called if you want to implement other game-over conditions in the future.
         this.gameState = 'gameOver';
         document.getElementById('ui').classList.add('hidden');
         document.getElementById('gameOver').classList.remove('hidden');
@@ -599,10 +762,9 @@ class CyberGuardGame {
     }
 
     respawnPlayer() {
-        // **FIX**: Removed life system. Player now has infinite lives.
         this.player.x = 50; this.player.y = 400;
         this.player.velX = 0; this.player.velY = 0;
-        this.player.invulnerable = 120; // 2 seconds of invulnerability
+        this.player.invulnerable = 120;
         this.showMessage("Respawned!");
     }
 
@@ -618,7 +780,6 @@ class CyberGuardGame {
     }
     
     getSecurityTip(type) {
-        // This can be expanded with more tips
         return "Security Token Collected!";
     }
 
@@ -628,83 +789,79 @@ class CyberGuardGame {
         if (this.gameState !== 'playing') return;
 
         this.ctx.save();
-        this.ctx.translate(Math.round(-this.camera.x), 0); // Only camera on X for this style of game
+        this.ctx.translate(Math.round(-this.camera.x), 0);
 
-        // Replace the platform rendering section in your render() method with this:
-
-this.renderGrid();
-this.renderPlatforms(this.platforms, 'platform');
-this.renderPlatforms(this.movingPlatforms, 'movingPlatform');
-this.renderPlatforms(this.disappearingPlatforms.filter(p => p.visible), 'disappearingPlatform');
-this.renderPlatforms(this.fallingPlatforms, 'fallingPlatform');
-this.renderEnemies();
-this.renderSpikes();
-this.renderCollectibles();
-this.renderGoal();
-this.renderPlayer();
+        this.renderGrid();
+        this.renderPlatforms(this.platforms, 'platform');
+        this.renderPlatforms(this.movingPlatforms, 'movingPlatform');
+        this.renderPlatforms(this.disappearingPlatforms.filter(p => p.visible), 'disappearingPlatform');
+        this.renderPlatforms(this.fallingPlatforms, 'fallingPlatform');
+        this.renderEnemies();
+        this.renderSpikes();
+        this.renderCollectibles();
+        this.renderTeleporters();
+        this.renderGoal();
+        this.renderPlayer();
         
         this.ctx.restore();
     }
 
     renderGrid() {
-        this.ctx.strokeStyle = 'rgba(0, 255, 0, 0.1)';
-        const gridSize = 50;
-        const startX = Math.floor(this.camera.x / gridSize) * gridSize;
-        for (let x = startX; x < startX + this.canvas.width + gridSize; x += gridSize) {
-            this.ctx.beginPath(); this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); this.ctx.stroke();
-        }
+        // Skip grid rendering for better performance
+        return;
     }
 
     renderPlatforms(platforms, assetKey) {
-    const img = this.assets[assetKey];
-    if (!img) return;
-    
-    platforms.forEach(p => {
-        // Get the colors based on platform type
-        let color1, color2;
-        switch(assetKey) {
-            case 'platform':
-                color1 = '#00ff00';
-                color2 = '#55ff55';
-                break;
-            case 'movingPlatform':
-                color1 = '#ffff00';
-                color2 = '#ffff55';
-                break;
-            case 'disappearingPlatform':
-                color1 = '#ff00ff';
-                color2 = '#ff55ff';
-                break;
-            case 'fallingPlatform':
-                color1 = '#ff8800';
-                color2 = '#ffaa00';
-                break;
-            default:
-                color1 = '#00ff00';
-                color2 = '#55ff55';
-        }
+        const img = this.assets[assetKey];
+        if (!img) return;
         
-        // Draw the platform manually instead of using pattern
-        this.ctx.fillStyle = color1;
-        this.ctx.fillRect(p.x, p.y, p.width, p.height);
-        
-        // Add top highlight
-        this.ctx.fillStyle = color2;
-        this.ctx.fillRect(p.x, p.y, p.width, 4);
-        
-        // Add grid pattern for texture
-        this.ctx.fillStyle = 'rgba(0,0,0,0.2)';
-        for (let i = 0; i < p.width; i += 8) {
-            this.ctx.fillRect(p.x + i, p.y, 1, p.height);
-        }
-        for (let i = 0; i < p.height; i += 8) {
-            this.ctx.fillRect(p.x, p.y + i, p.width, 1);
-        }
-    });
-}
+        platforms.forEach(p => {
+            // Only render visible platforms
+            if (!this.isVisible(p)) return;
+
+            let color1, color2;
+            switch(assetKey) {
+                case 'platform':
+                    color1 = '#00ff00';
+                    color2 = '#55ff55';
+                    break;
+                case 'movingPlatform':
+                    color1 = '#ffff00';
+                    color2 = '#ffff55';
+                    break;
+                case 'disappearingPlatform':
+                    color1 = '#ff00ff';
+                    color2 = '#ff55ff';
+                    break;
+                case 'fallingPlatform':
+                    color1 = '#ff8800';
+                    color2 = '#ffaa00';
+                    break;
+                default:
+                    color1 = '#00ff00';
+                    color2 = '#55ff55';
+            }
+            
+            this.ctx.fillStyle = color1;
+            this.ctx.fillRect(p.x, p.y, p.width, p.height);
+            
+            this.ctx.fillStyle = color2;
+            this.ctx.fillRect(p.x, p.y, p.width, 4);
+            
+            // Simplified grid pattern for better performance
+            this.ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            for (let i = 0; i < p.width; i += 16) {
+                this.ctx.fillRect(p.x + i, p.y, 1, p.height);
+            }
+            for (let i = 0; i < p.height; i += 16) {
+                this.ctx.fillRect(p.x, p.y + i, p.width, 1);
+            }
+        });
+    }
 
     renderEnemies() {
         this.enemies.forEach(enemy => {
+            if (!this.isVisible(enemy)) return;
             const img = this.assets[enemy.type];
             if (img) this.ctx.drawImage(img, Math.round(enemy.x), Math.round(enemy.y));
         });
@@ -714,6 +871,7 @@ this.renderPlayer();
         const img = this.assets.spikes;
         if (!img) return;
         this.spikes.forEach(spike => {
+            if (!this.isVisible(spike)) return;
             for (let x = 0; x < spike.width; x += img.width) {
                 this.ctx.drawImage(img, spike.x + x, spike.y);
             }
@@ -722,7 +880,7 @@ this.renderPlayer();
 
     renderCollectibles() {
         this.collectibles.forEach(item => {
-            if (!item.collected) {
+            if (!item.collected && this.isVisible(item)) {
                 const img = this.assets[item.type];
                 if(img) {
                     item.bobOffset += 0.05;
@@ -732,9 +890,34 @@ this.renderPlayer();
         });
     }
 
+    renderTeleporters() {
+        this.teleporters.forEach(t => {
+            if (!this.isVisible(t)) return;
+            
+            // Teleporter effect
+            this.ctx.save();
+            this.ctx.globalAlpha = 0.7 + Math.sin(t.animOffset) * 0.3;
+            
+            // Draw teleporter base
+            this.ctx.fillStyle = t.color || '#ff00ff';
+            this.ctx.fillRect(t.x, t.y, t.width, t.height);
+            
+            // Draw teleporter glow
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fillRect(t.x + 2, t.y + 2, t.width - 4, t.height - 4);
+            
+            // Draw inner portal
+            this.ctx.fillStyle = t.color || '#ff00ff';
+            this.ctx.fillRect(t.x + 4, t.y + 4, t.width - 8, t.height - 8);
+            
+            this.ctx.restore();
+        });
+    }
+
     renderGoal() {
+        if (!this.goal || !this.isVisible(this.goal)) return;
         const img = this.assets.goal;
-        if (this.goal && img) this.ctx.drawImage(img, this.goal.x, this.goal.y);
+        if (img) this.ctx.drawImage(img, this.goal.x, this.goal.y);
     }
 
     renderPlayer() {
