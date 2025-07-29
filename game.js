@@ -780,7 +780,20 @@ class CyberGuardGame {
     }
     
     getSecurityTip(type) {
-        return "Security Token Collected!";
+        const tips = {
+            firewall: "TIP: A firewall acts as a barrier, preventing unauthorized access to your network.",
+            antivirus: "TIP: Keep your antivirus software updated to protect against the latest threats.",
+            encryption: "TIP: Encryption scrambles your data, making it unreadable to unauthorized users.",
+            password: "TIP: Use strong, unique passwords for each account. A password manager can help!",
+            vpn: "TIP: A VPN encrypts your internet traffic, keeping you safe on public Wi-Fi.",
+            backup: "TIP: Regularly back up important files to prevent data loss from ransomware or hardware failure.",
+            masterkey: "TIP: A master key is powerful! Protect your most critical credentials with extra care.",
+            quantumencryption: "TIP: Quantum encryption offers next-level security, resistant to even quantum computers.",
+            neuralantivirus: "TIP: AI-powered antivirus can predict and stop new, unknown threats.",
+            blockchainvpn: "TIP: A decentralized VPN adds another layer of anonymity and security.",
+            aibackup: "TIP: Smart backups can prioritize critical files and ensure data integrity."
+        };
+        return tips[type] || "Security Token Collected! Stay vigilant online.";
     }
 
     render() {
