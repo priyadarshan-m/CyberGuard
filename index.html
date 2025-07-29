@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberGuard: The Security Platformer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="ui" class="hidden">
+            <div class="ui-left">
+                <div class="ui-stat">
+                    <div class="ui-icon icon-score">💰</div>
+                    <span id="score">0</span>
+                </div>
+                <div class="ui-stat">
+                    <div class="ui-icon icon-timer">⏱️</div>
+                    <span id="timer">0:00</span>
+                </div>
+            </div>
+            <div class="ui-right">
+                <div class="ui-stat">
+                    <div class="ui-icon icon-level">🏆</div>
+                    <span id="level">1</span>
+                </div>
+                <div class="ui-stat">
+                    <div class="ui-icon icon-collected">🔐</div>
+                    <span id="collected">0/0</span>
+                </div>
+            </div>
+            <div id="message"></div>
+        </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div id="startScreen">
+            <div class="school-info">
+                <p class="school-name">B.K. Birla Public School</p>
+                <p class="project-info">School Interhouse Competition Project</p>
+                <p class="developer-info">Developed by Priyadarshan Mahankuda [GR. No. 9235]</p>
+                <p class="guide-info">Under the guidance of Pradnya Gulane</p>
+            </div>
+            
+            <h1 class="title">🛡️ CYBERGUARD 🛡️</h1>
+            <p class="subtitle">The Ultimate Security Platformer Challenge</p>
+            
+            <p class="controls"><strong>Controls:</strong> Arrow Keys/WASD to move, SPACE to jump</p>
+            
+            <button id="startBtn">🚀 CONTINUE</button>
+        </div>
+        
+        <div id="gameOver" class="hidden">
+            <h2>💀 GAME OVER 💀</h2>
+            <p id="gameOverScore"></p>
+            <p>Better luck next time, cyber defender!</p>
+            <button id="restartBtn">🔄 TRY AGAIN</button>
+        </div>
+        
+        <div id="gameWin" class="hidden">
+            <h2>🏆 MISSION ACCOMPLISHED! 🏆</h2>
+            <p>Congratulations, Cyber Guardian!</p>
+            <p>You've successfully defended against all cyber threats!</p>
+            <p id="finalScore"></p>
+            <p id="finalTime"></p>
+            <button id="playAgainBtn">🎮 PLAY AGAIN</button>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
