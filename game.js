@@ -360,18 +360,42 @@ class CyberGuardGame {
                 ], 
                 goal:{x:1150,y:350,width:40,height:50}
             },
+            // --- MODIFIED LEVEL 5 ---
             5: { 
                 platforms: [
+                    // Start
                     {x:0,y:550,width:200,height:50},
+                    // First jump
                     {x:300,y:450,width:100,height:20},
+                    // Bridge to the middle section
+                    {x:500, y:400, width:100, height:20},
+                    // Platform before the falling one
+                    {x:650, y:320, width:100, height:20},
+                     // Platform after the falling one
+                    {x:900, y:350, width:100, height:20},
+                    // Next static platform
+                    {x:1150, y:400, width:100, height:20},
+                    // Final platform before goal
                     {x:1500,y:450,width:200,height:50}
                 ], 
-                fallingPlatforms: [{x:700,y:250,width:100,height:20,fallDelay:120}], 
-                chasers: [{x:1800,y:0,width:50,height:600,speed:1.2,type:'wall'}], 
-                enemies: [{x:310,y:430,type:'supervirus',speed:2,patrol:40}], 
-                spikes: [{x:200,y:530,width:100}], 
-                teleporters: [{x:550,y:320,width:20,height:30,target:{x:50,y:500},color:'#ff00ff'}], 
-                collectibles: [{x:330,y:420,type:'masterkey'}], 
+                // A moving platform to add challenge
+                movingPlatforms: [{x:1300, y:380, width:100, height:20, moveY: 100, speed: 2}],
+                // The falling platform, now reachable
+                fallingPlatforms: [{x:780,y:280,width:100,height:20,fallDelay:90}],
+                // The chaser wall makes the level urgent
+                chasers: [{x:1800,y:0,width:50,height:600,speed:1,type:'wall'}], 
+                enemies: [
+                    {x:310,y:430,type:'supervirus',speed:2,patrol:40},
+                    {x:910,y:330,type:'megatrojan',speed:1.5,patrol:40}
+                ], 
+                spikes: [
+                    {x:200,y:530,width:100},
+                    {x:520,y:380,width:60}
+                ],
+                collectibles: [
+                    {x:330,y:420,type:'masterkey'},
+                    {x:1350, y:300, type:'quantumencryption'}
+                ], 
                 goal:{x:1550,y:400,width:40,height:50}
             },
         };
@@ -708,7 +732,7 @@ class CyberGuardGame {
                 this.player.velX = 0;
                 this.player.velY = 0;
                 t.cooldown = 60; // 1 second cooldown
-                this.showMessage("Teleported!");
+                
             }
         });
 
@@ -765,7 +789,6 @@ class CyberGuardGame {
         this.player.x = 50; this.player.y = 400;
         this.player.velX = 0; this.player.velY = 0;
         this.player.invulnerable = 120;
-        this.showMessage("Respawned!");
     }
 
     checkCollision(r1, r2) {
